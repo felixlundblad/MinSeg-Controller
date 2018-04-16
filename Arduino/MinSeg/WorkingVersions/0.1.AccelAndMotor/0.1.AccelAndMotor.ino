@@ -18,10 +18,9 @@ MPU6050 accelgyro;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-double angle;
 
 int time = 0;
-int pos = 0;
+int counter = 0;
 boolean goingForward = false;
 
 void setup() {
@@ -53,27 +52,18 @@ void setupPins() {
 }
 
 void setupInterrupts() {
-  attachInterrupt(digitalPinToInterrupt(ENCODER_F), changePos, RISING);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_F), count, RISING);
 }
 
 void loop() {
   if (Serial.available()) {
-    pos = readInt();
+    counter = readInt();
   }
   getAccelgyroValues();
   //printAccelgyroValues();
-  simpleControl();
-  angle = atan2(az, ay);
-  angle = (angle < 0) ? angle + PI : angle - PI;
-  //Serial.println("_________________________________________________________________________________________________________________________________");
-  Serial.print("Angle: ");
-  //Serial.print('\t');
-  Serial.print(angle*180.0/PI);
-  Serial.print('\t');
-  Serial.print('\t');
-  Serial.print("Position: ");
-  //Serial.print('\t');
-  Serial.println(pos);
+  control();
+
+  //Serial.println(counter);
   delay(time);
 }
 
@@ -88,12 +78,8 @@ int readInt() {
   return s.toInt();
 }
 
-void simpleControl(){
-  if(abs(angle) > (PI/2)){
-    stopMotor();
-    return;
-  }
-  if(angle*180.0/PI > 6){
+void control(){
+  if(az < 0){
     goingForward = true;
   } else{
     goingForward = false;
@@ -118,9 +104,9 @@ void printAccelgyroValues(){
         Serial.print(ax); Serial.print("\t");
         Serial.print(ay); Serial.print("\t");
         Serial.print(az); Serial.print("\t");
-        Serial.print(gx); Serial.print("\t");
+        //Serial.print(gx); Serial.print("\t");
         Serial.print(gy); Serial.print("\t");
-        Serial.println(gz);
+        //Serial.println(gz);
 }
 
 void forward() {
@@ -152,10 +138,10 @@ void stopMotor() {
   digitalWrite(MOTOR_PIN_B, LOW);
 }
 
-void changePos() {
+void count() {
   if ((digitalRead(ENCODER_F) << 1) + digitalRead(ENCODER_B) == 2) {
-    ++pos;
+    ++counter;
   } else {
-    --pos;
+    --counter;
   }
 }
